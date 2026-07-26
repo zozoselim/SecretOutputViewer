@@ -19,5 +19,6 @@ setuptools.setup(
         "novavision.package.utils",
     ],
     package_dir={"novavision.package": "src"},
+    install_requires=[],
     python_requires=">=3.8",
 )
