@@ -8,9 +8,9 @@ if __package__:
         MessageOutput,
         PackageConfigs,
         PackageModel,
-        SecretOutputViewerExecutor,
+        StrExecutor,
+        StrResponse,
         ViewerOutputs,
-        ViewerResponse,
     )
 else:
     from components.SecretOutputViewer.src.models.PackageModel import (
@@ -18,18 +18,20 @@ else:
         MessageOutput,
         PackageConfigs,
         PackageModel,
-        SecretOutputViewerExecutor,
+        StrExecutor,
+        StrResponse,
         ViewerOutputs,
-        ViewerResponse,
     )
 
 
-def build_response(context):
+def build_response_str(context):
+    """Return only a safe status message."""
+
     outputs = ViewerOutputs(
         message=MessageOutput(value=context.message)
     )
-    response = ViewerResponse(outputs=outputs)
-    selected_executor = SecretOutputViewerExecutor(value=response)
+    response = StrResponse(outputs=outputs)
+    selected_executor = StrExecutor(value=response)
     package_configs = PackageConfigs(
         executor=ConfigExecutor(value=selected_executor)
     )

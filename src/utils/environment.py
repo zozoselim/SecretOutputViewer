@@ -1,94 +1,110 @@
-"""Resolve secret references through NovaVision's Environment SDK."""
+"""Parse and resolve runtime secret references."""
 
 import json
-from typing import Dict, List, Sequence, Union
+import re
+from typing import Dict, List
 
 from sdks.novavision.src.base.environment import Environment
 
 
-def _extract_raw_value(raw_references):
-    """Unwrap SDK/Pydantic values when the runtime passes a wrapper."""
-
-    if hasattr(raw_references, "value"):
-        raw_references = raw_references.value
-
-    if hasattr(raw_references, "model_dump"):
-        dumped = raw_references.model_dump()
-        if isinstance(dumped, dict) and "value" in dumped:
-            raw_references = dumped["value"]
-
-    return raw_references
+_ENV_NAME_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
-def parse_secret_references(
-    raw_references: Union[str, Sequence[str]],
-) -> List[str]:
-    """Parse the JSON string emitted by Environment Secrets Store."""
+def _unwrap_value(raw_value):
+    """Handle strings, SDK models and raw output dictionaries."""
 
-    raw_references = _extract_raw_value(raw_references)
+    if raw_value is None:
+        return None
 
-    if isinstance(raw_references, str):
+    if hasattr(raw_value, "value"):
+        return _unwrap_value(raw_value.value)
+
+    if hasattr(raw_value, "model_dump"):
+        dumped = raw_value.model_dump()
+        return _unwrap_value(dumped)
+
+    if hasattr(raw_value, "dict"):
+        dumped = raw_value.dict()
+        return _unwrap_value(dumped)
+
+    if isinstance(raw_value, dict):
+        if "value" in raw_value:
+            return _unwrap_value(raw_value["value"])
+        if "secretReferences" in raw_value:
+            return _unwrap_value(raw_value["secretReferences"])
+
+    return raw_value
+
+
+def parse_secret_references(raw_value) -> List[str]:
+    """Return validated environment-variable names from the input payload."""
+
+    raw_value = _unwrap_value(raw_value)
+
+    if isinstance(raw_value, str):
+        text = raw_value.strip()
+        if not text:
+            raise ValueError("secretReferences is empty.")
+
         try:
-            references = json.loads(raw_references)
-        except json.JSONDecodeError as error:
-            raise ValueError(
-                "secretReferences must be a valid JSON list string."
-            ) from error
-    elif isinstance(raw_references, (list, tuple)):
-        references = list(raw_references)
-    else:
-        raise ValueError(
-            "secretReferences must be a JSON list string."
-        )
+            decoded = json.loads(text)
+        except json.JSONDecodeError:
+            # Accept a single plain environment-variable name defensively.
+            decoded = [text]
 
-    if not isinstance(references, list) or not references:
-        raise ValueError(
-            "secretReferences must contain at least one reference."
-        )
+        return parse_secret_references(decoded)
 
-    cleaned_references: List[str] = []
-    seen_references = set()
+    if isinstance(raw_value, (list, tuple)):
+        if not raw_value:
+            raise ValueError("secretReferences contains no references.")
 
-    for reference in references:
-        if not isinstance(reference, str) or not reference.strip():
-            raise ValueError(
-                "Secret references must be non-empty strings."
-            )
+        references: List[str] = []
+        seen = set()
 
-        cleaned_reference = reference.strip()
-        normalized_reference = cleaned_reference.lower()
-        if normalized_reference in seen_references:
-            raise ValueError(
-                "Secret references must be unique."
-            )
+        for item in raw_value:
+            item = _unwrap_value(item)
+            if not isinstance(item, str):
+                raise ValueError("Every secret reference must be a string.")
 
-        seen_references.add(normalized_reference)
-        cleaned_references.append(cleaned_reference)
+            reference = item.strip()
+            if not _ENV_NAME_PATTERN.fullmatch(reference):
+                raise ValueError(
+                    f"Invalid environment-variable reference: {reference!r}."
+                )
 
-    return cleaned_references
+            normalized = reference.lower()
+            if normalized in seen:
+                continue
+
+            seen.add(normalized)
+            references.append(reference)
+
+        return references
+
+    raise ValueError(
+        "secretReferences must be a JSON list string or a list of names."
+    )
 
 
-def resolve_secret_references(raw_references) -> Dict[str, str]:
-    """Resolve values in memory without printing or returning plaintext."""
+def resolve_secret_references(raw_value) -> Dict[str, str]:
+    """Read referenced values in memory without returning plaintext."""
 
-    references = parse_secret_references(raw_references)
+    references = parse_secret_references(raw_value)
     environment = Environment()
-    resolved_values: Dict[str, str] = {}
-    missing_references: List[str] = []
+    resolved: Dict[str, str] = {}
+    missing: List[str] = []
 
     for reference in references:
         value = environment.get_environment_variable(reference)
-
         if value is None or not str(value).strip():
-            missing_references.append(reference)
-            continue
+            missing.append(reference)
+        else:
+            resolved[reference] = value
 
-        resolved_values[reference] = value
-
-    if missing_references:
+    if missing:
         raise RuntimeError(
-            "Required secret references were not found or were empty: "
-            + ", ".join(missing_references)
+            "Environment variable(s) were not found or were empty: "
+            + ", ".join(missing)
         )
 
-    return resolved_values
+    return resolved

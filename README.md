@@ -1,5 +1,17 @@
-# Secret Output Viewer
+# Secret Output Viewer v0.4.1
 
-Receives the `secretReferences` JSON string from Environment Secrets Store, resolves those names through NovaVision's `Environment` SDK, and consumes the values only in memory.
+Compatibility-oriented viewer for the `secretReferences` string emitted by
+Environment Secrets Store.
 
-The component returns only a safe status message. It never outputs plaintext secret values.
+The package keeps the older working `Str` executor structure, parses the JSON
+reference list, resolves values through NovaVision's `Environment` SDK, stores
+values only in memory, and returns only a safe status message.
+
+Connection:
+
+```text
+Environment Secrets Store.secretReferences
+    -> Secret Output Viewer.secretReferences
+```
+
+No `cryptography` package or transport key is required.

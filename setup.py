@@ -3,20 +3,15 @@ import setuptools
 
 setuptools.setup(
     name="novavision-secret-output-viewer",
-    version="0.4.0",
+    version="0.4.1",
     author="DigiNova",
     author_email="info@diginova.com.tr",
     description=(
-        "Resolves trusted Environment Secrets Store references inside "
-        "the NovaVision runtime without exposing secret values."
+        "Resolves Environment Secrets Store references without exposing values."
     ),
     license="MIT",
     install_requires=[],
-    extras_require={
-        "dev": [
-            "pytest>=8,<9",
-        ],
-    },
+    extras_require={"dev": ["pytest>=8,<9"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -28,9 +23,7 @@ setuptools.setup(
         "novavision.package.models",
         "novavision.package.utils",
     ],
-    package_dir={
-        "novavision.package": "src",
-    },
+    package_dir={"novavision.package": "src"},
     python_requires=">=3.8",
     include_package_data=True,
     zip_safe=False,

@@ -2,8 +2,6 @@
 
 from typing import Literal, Union
 
-from pydantic import Field
-
 from sdks.novavision.src.base.model import (
     Config,
     Configs,
@@ -18,6 +16,8 @@ from sdks.novavision.src.base.model import (
 
 
 class SecretReferencesInput(Input):
+    """JSON string containing environment-variable names."""
+
     name: Literal["secretReferences"] = "secretReferences"
     value: str = ""
     type: Literal["string"] = "string"
@@ -27,6 +27,8 @@ class SecretReferencesInput(Input):
 
 
 class MessageOutput(Output):
+    """Safe status message that never contains secret values."""
+
     name: Literal["message"] = "message"
     value: str
     type: Literal["string"] = "string"
@@ -35,7 +37,7 @@ class MessageOutput(Output):
         title = "Message"
 
 
-class ViewerInputs(Inputs):
+class StrInputs(Inputs):
     secretReferences: SecretReferencesInput
 
 
@@ -43,9 +45,10 @@ class EmptyConfigs(Configs):
     pass
 
 
-class ViewerRequest(Request):
-    inputs: ViewerInputs
-    configs: EmptyConfigs = Field(default_factory=EmptyConfigs)
+class StrRequest(Request):
+    inputs: StrInputs
+    # Keep the same structure as the older viewer version that NovaVision ran.
+    configs: EmptyConfigs = EmptyConfigs()
 
     class Config:
         json_schema_extra = {"target": "inputs"}
@@ -55,35 +58,38 @@ class ViewerOutputs(Outputs):
     message: MessageOutput
 
 
-class ViewerResponse(Response):
+class StrResponse(Response):
     outputs: ViewerOutputs
 
 
-class SecretOutputViewerExecutor(Config):
-    name: Literal[
-        "SecretOutputViewer"
-    ] = "SecretOutputViewer"
-    value: Union[ViewerRequest, ViewerResponse]
+class StrExecutor(Config):
+    """String executor retained for compatibility with the working package."""
+
+    name: Literal["Str"] = "Str"
+    value: Union[StrRequest, StrResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Secret Output Viewer"
+        title = "Resolve Secret References"
         json_schema_extra = {"target": {"value": 0}}
 
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
-    value: SecretOutputViewerExecutor
+    value: StrExecutor
     type: Literal["executor"] = "executor"
-    field: Literal[
-        "dependentDropdownlist"
-    ] = "dependentDropdownlist"
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
     restart: Literal[True] = True
 
     class Config:
         title = "Task"
-        json_schema_extra = {"target": "value"}
+        json_schema_extra = {
+            "shortDescription": (
+                "Receives secretReferences from Environment Secrets Store "
+                "and resolves them through the runtime environment."
+            )
+        }
 
 
 class PackageConfigs(Configs):
