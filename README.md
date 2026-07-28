@@ -1,19 +1,21 @@
 # Secret Output Viewer
 
-Use the `Str` executor and connect:
+This demo consumer receives a safe `secretContext` object from
+Environment Secrets Store.
+
+Connect:
 
 ```text
-EnvironmentSecretsStore.message
-    -> SecretOutputViewer.secretText
+EnvironmentSecretsStore.secretContext
+    -> SecretOutputViewer.secretContext
 ```
 
-Environment Secrets Store first verifies access to the configured
-environment values and returns a safe success message.
+The consumer resolves the referenced environment variables through
+NovaVision's `Environment` SDK. Real values are available only inside
+the executor and are never returned or logged.
 
-Secret Output Viewer receives that string and returns:
+Successful output:
 
 ```text
-Environment Secrets Store was connected successfully.
+Secret values were resolved and are ready for trusted internal use.
 ```
-
-No secret value is transferred or displayed.

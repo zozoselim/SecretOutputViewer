@@ -1,59 +1,55 @@
-"""Response builders for Secret Output Viewer."""
+"""Response builder for Secret Output Viewer."""
 
 from sdks.novavision.src.helper.package import PackageHelper
 
 if __package__:
     from ..models.PackageModel import (
         ConfigExecutor,
-        ListExecutor,
-        ListResponse,
+        ConsumerOutputs,
+        ConsumerResponse,
         MessageOutput,
         PackageConfigs,
         PackageModel,
-        StrExecutor,
-        StrResponse,
-        ViewerOutputs,
+        SecretReferenceConsumerExecutor,
     )
 else:
     from components.SecretOutputViewer.src.models.PackageModel import (
         ConfigExecutor,
-        ListExecutor,
-        ListResponse,
+        ConsumerOutputs,
+        ConsumerResponse,
         MessageOutput,
         PackageConfigs,
         PackageModel,
-        StrExecutor,
-        StrResponse,
-        ViewerOutputs,
+        SecretReferenceConsumerExecutor,
     )
 
 
-def _build(context, mode: str):
-    message_output = MessageOutput(value=context.message)
-    outputs = ViewerOutputs(message=message_output)
+def build_response(context):
+    """Return a safe downstream success message."""
 
-    if mode == "Str":
-        response = StrResponse(outputs=outputs)
-        selected_executor = StrExecutor(value=response)
-    elif mode == "List":
-        response = ListResponse(outputs=outputs)
-        selected_executor = ListExecutor(value=response)
-    else:
-        raise ValueError(f"Unsupported viewer mode: {mode}")
+    outputs = ConsumerOutputs(
+        message=MessageOutput(
+            value=context.message,
+        )
+    )
+
+    response = ConsumerResponse(
+        outputs=outputs,
+    )
+
+    selected_executor = SecretReferenceConsumerExecutor(
+        value=response,
+    )
 
     package_configs = PackageConfigs(
-        executor=ConfigExecutor(value=selected_executor)
+        executor=ConfigExecutor(
+            value=selected_executor
+        )
     )
+
     helper = PackageHelper(
         packageModel=PackageModel,
         packageConfigs=package_configs,
     )
+
     return helper.build_model(context)
-
-
-def build_response_str(context):
-    return _build(context=context, mode="Str")
-
-
-def build_response_list(context):
-    return _build(context=context, mode="List")
