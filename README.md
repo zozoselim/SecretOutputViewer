@@ -1,16 +1,26 @@
 # Secret Output Viewer
 
-Select **List** mode.
+This trusted test component receives the `encryptedSecrets` string from
+Environment Secrets Store, decrypts it in memory, and returns only a safe status
+message.
 
-Input:
+Both packages must receive the same runtime environment variable:
 
-```json
-["DOCKER_NETWORK", "ACCESS_TOKEN"]
+```text
+NOVAVISION_SECRET_TRANSPORT_KEY=<Fernet key>
 ```
 
-The list contains only environment-variable names. The executor resolves the
-actual values through NovaVision's `Environment` SDK, keeps them in memory, and
-returns only a safe success message.
+Workflow connection:
 
-The actual values are available inside `self.resolved_values` for trusted
-downstream work and are never written to the output.
+```text
+Environment Secrets Store.encryptedSecrets
+    -> Secret Output Viewer.encryptedSecrets
+```
+
+The decrypted mapping is available only inside:
+
+```python
+self.resolved_values
+```
+
+It is never returned, printed, or logged.

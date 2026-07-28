@@ -1,10 +1,8 @@
-"""Consume secret references without exposing their values."""
+"""Decrypt and consume secret values without exposing plaintext."""
 
 import os
 import sys
 from typing import Dict
-from collections.abc import Mapping
-
 
 sys.path.append(
     os.path.join(
@@ -13,24 +11,22 @@ sys.path.append(
     )
 )
 
-
-from sdks.novavision.src.base.component import (
-    Component,
-)
-
+from sdks.novavision.src.base.component import Component
 
 if __package__:
     from ..models.PackageModel import PackageModel
-    from ..utils.environment import (
-        resolve_secret_references,
-    )
+    from ..utils.crypto import decrypt_secret_values
+    from ..utils.environment import read_transport_key
     from ..utils.response import build_response
 else:
     from components.SecretOutputViewer.src.models.PackageModel import (
         PackageModel,
     )
+    from components.SecretOutputViewer.src.utils.crypto import (
+        decrypt_secret_values,
+    )
     from components.SecretOutputViewer.src.utils.environment import (
-        resolve_secret_references,
+        read_transport_key,
     )
     from components.SecretOutputViewer.src.utils.response import (
         build_response,
@@ -38,24 +34,16 @@ else:
 
 
 class SecretOutputViewer(Component):
-    """Resolve and consume trusted secret references."""
+    """Trusted consumer for encrypted secret payloads."""
 
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
 
-        self.request.model = PackageModel(
-            **self.request.data
+        self.request.model = PackageModel(**self.request.data)
+        self.encrypted_secrets = self.request.get_param(
+            "encryptedSecrets"
         )
-
-        self.secret_context = self.request.get_param(
-            "secretContext"
-        )
-
-        self.resolved_values: Dict[
-            str,
-            str,
-        ] = {}
-
+        self.resolved_values: Dict[str, str] = {}
         self.message = ""
 
     @staticmethod
@@ -63,50 +51,20 @@ class SecretOutputViewer(Component):
         return {}
 
     def run(self):
-        secret_context = self.secret_context
-
-        if hasattr(
-            secret_context,
-            "model_dump",
-        ):
-            secret_context = (
-                secret_context.model_dump()
-            )
-
-        if (
-            not isinstance(
-                secret_context,
-                Mapping,
-            )
-            or not secret_context
-        ):
-            raise RuntimeError(
-                "secretContext connection was not resolved "
-                "to a non-empty object."
-            )
-
-        self.resolved_values = (
-            resolve_secret_references(
-                secret_context
-            )
+        transport_key = read_transport_key()
+        self.resolved_values = decrypt_secret_values(
+            self.encrypted_secrets,
+            transport_key,
         )
-
-        resolved_count = len(
-            self.resolved_values
-        )
-
         self.message = (
-            f"{resolved_count} secret value was resolved "
-            "and consumed successfully."
+            f"{len(self.resolved_values)} secret value(s) were "
+            "decrypted and consumed successfully."
         )
 
-        return build_response(
-            context=self
-        )
+        return build_response(context=self)
+
 
 if __name__ == "__main__":
-    from sdks.novavision.src.helper.executor import (
-        Executor,
-    )
+    from sdks.novavision.src.helper.executor import Executor
 
     Executor(sys.argv[1]).run()

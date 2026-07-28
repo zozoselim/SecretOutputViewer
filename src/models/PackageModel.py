@@ -1,6 +1,8 @@
-"""NovaVision package model for the Secret Output Viewer component."""
+"""NovaVision package model for Secret Output Viewer."""
 
-from typing import List, Literal, Union
+from typing import Literal, Union
+
+from pydantic import Field
 
 from sdks.novavision.src.base.model import (
     Config,
@@ -15,30 +17,19 @@ from sdks.novavision.src.base.model import (
 )
 
 
-class SecretStringInput(Input):
-    """One secret value received from Environment Secrets Store Str mode."""
+class EncryptedSecretsInput(Input):
+    """Authenticated ciphertext from Environment Secrets Store."""
 
-    name: Literal["secretText"] = "secretText"
-    value: str
+    name: Literal["encryptedSecrets"] = "encryptedSecrets"
+    value: str = ""
     type: Literal["string"] = "string"
 
     class Config:
-        title = "Secret Text"
-
-
-class SecretReferencesInput(Input):
-    """Safe environment-variable references from Environment Secrets Store."""
-
-    name: Literal["secretReferences"] = "secretReferences"
-    value: List[str]
-    type: Literal["object"] = "object"
-
-    class Config:
-        title = "Secret References"
+        title = "Encrypted Secrets"
 
 
 class MessageOutput(Output):
-    """Human-readable, non-secret status message."""
+    """Safe status message that never contains decrypted values."""
 
     name: Literal["message"] = "message"
     value: str
@@ -48,31 +39,17 @@ class MessageOutput(Output):
         title = "Message"
 
 
-class StrInputs(Inputs):
-    secretText: SecretStringInput
-
-
-class ListInputs(Inputs):
-    secretReferences: SecretReferencesInput
+class ViewerInputs(Inputs):
+    encryptedSecrets: EncryptedSecretsInput
 
 
 class EmptyConfigs(Configs):
-    """The viewer needs no additional runtime configuration."""
-
     pass
 
 
-class StrRequest(Request):
-    inputs: StrInputs
-    configs: EmptyConfigs = EmptyConfigs()
-
-    class Config:
-        json_schema_extra = {"target": "inputs"}
-
-
-class ListRequest(Request):
-    inputs: ListInputs
-    configs: EmptyConfigs = EmptyConfigs()
+class ViewerRequest(Request):
+    inputs: ViewerInputs
+    configs: EmptyConfigs = Field(default_factory=EmptyConfigs)
 
     class Config:
         json_schema_extra = {"target": "inputs"}
@@ -82,54 +59,35 @@ class ViewerOutputs(Outputs):
     message: MessageOutput
 
 
-class StrResponse(Response):
+class ViewerResponse(Response):
     outputs: ViewerOutputs
 
 
-class ListResponse(Response):
-    outputs: ViewerOutputs
-
-
-class StrExecutor(Config):
-    name: Literal["Str"] = "Str"
-    value: Union[StrRequest, StrResponse]
+class SecretOutputViewerExecutor(Config):
+    name: Literal[
+        "SecretOutputViewer"
+    ] = "SecretOutputViewer"
+    value: Union[ViewerRequest, ViewerResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Str"
-        json_schema_extra = {"target": {"value": 0}}
-
-
-class ListExecutor(Config):
-    name: Literal["List"] = "List"
-    value: Union[ListRequest, ListResponse]
-    type: Literal["object"] = "object"
-    field: Literal["option"] = "option"
-
-    class Config:
-        title = "List"
+        title = "Secret Output Viewer"
         json_schema_extra = {"target": {"value": 0}}
 
 
 class ConfigExecutor(Config):
-    """Choose the input type that matches Environment Secrets Store."""
-
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
-    value: Union[StrExecutor, ListExecutor]
+    value: SecretOutputViewerExecutor
     type: Literal["executor"] = "executor"
-    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+    field: Literal[
+        "dependentDropdownlist"
+    ] = "dependentDropdownlist"
     restart: Literal[True] = True
 
     class Config:
-        title = "Input Type"
-        json_schema_extra = {
-            "target": "value",
-            "shortDescription": (
-                "Choose List for Environment Secrets Store "
-                "secretReferences output."
-            ),
-        }
+        title = "Task"
+        json_schema_extra = {"target": "value"}
 
 
 class PackageConfigs(Configs):
