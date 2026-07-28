@@ -17,20 +17,16 @@ from sdks.novavision.src.base.model import (
 )
 
 
-class EncryptedSecretsInput(Input):
-    """Authenticated ciphertext from Environment Secrets Store."""
-
-    name: Literal["encryptedSecrets"] = "encryptedSecrets"
+class SecretReferencesInput(Input):
+    name: Literal["secretReferences"] = "secretReferences"
     value: str = ""
     type: Literal["string"] = "string"
 
     class Config:
-        title = "Encrypted Secrets"
+        title = "Secret References"
 
 
 class MessageOutput(Output):
-    """Safe status message that never contains decrypted values."""
-
     name: Literal["message"] = "message"
     value: str
     type: Literal["string"] = "string"
@@ -40,7 +36,7 @@ class MessageOutput(Output):
 
 
 class ViewerInputs(Inputs):
-    encryptedSecrets: EncryptedSecretsInput
+    secretReferences: SecretReferencesInput
 
 
 class EmptyConfigs(Configs):

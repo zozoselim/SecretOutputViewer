@@ -3,16 +3,15 @@ import setuptools
 
 setuptools.setup(
     name="novavision-secret-output-viewer",
-    version="0.3.0",
+    version="0.4.0",
     author="DigiNova",
     author_email="info@diginova.com.tr",
     description=(
-        "Decrypts and consumes trusted Environment Secrets Store payloads."
+        "Resolves trusted Environment Secrets Store references inside "
+        "the NovaVision runtime without exposing secret values."
     ),
     license="MIT",
-    install_requires=[
-        "cryptography>=41,<47",
-    ],
+    install_requires=[],
     extras_require={
         "dev": [
             "pytest>=8,<9",

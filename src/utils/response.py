@@ -25,15 +25,11 @@ else:
 
 
 def build_response(context):
-    """Return only a safe status message."""
-
     outputs = ViewerOutputs(
         message=MessageOutput(value=context.message)
     )
     response = ViewerResponse(outputs=outputs)
-    selected_executor = SecretOutputViewerExecutor(
-        value=response
-    )
+    selected_executor = SecretOutputViewerExecutor(value=response)
     package_configs = PackageConfigs(
         executor=ConfigExecutor(value=selected_executor)
     )
