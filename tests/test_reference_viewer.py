@@ -20,15 +20,25 @@ def _register_package(name: str, path: Path) -> None:
 def _prepare_imports() -> None:
     _register_package("novavision", SRC_DIR)
     _register_package("novavision.package", SRC_DIR)
-    _register_package("novavision.package.executors", SRC_DIR / "executors")
-    _register_package("novavision.package.models", SRC_DIR / "models")
-    _register_package("novavision.package.utils", SRC_DIR / "utils")
+    _register_package(
+        "novavision.package.executors",
+        SRC_DIR / "executors",
+    )
+    _register_package(
+        "novavision.package.models",
+        SRC_DIR / "models",
+    )
+    _register_package(
+        "novavision.package.utils",
+        SRC_DIR / "utils",
+    )
 
     for module_name in [
         "sdks",
         "sdks.novavision",
         "sdks.novavision.src",
         "sdks.novavision.src.base",
+        "sdks.novavision.src.helper",
     ]:
         module = types.ModuleType(module_name)
         module.__path__ = []
@@ -62,6 +72,22 @@ def _prepare_imports() -> None:
         "sdks.novavision.src.base.component"
     ] = component_module
 
+    executor_helper_module = types.ModuleType(
+        "sdks.novavision.src.helper.executor"
+    )
+
+    class FakeExecutor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return None
+
+    executor_helper_module.Executor = FakeExecutor
+    sys.modules[
+        "sdks.novavision.src.helper.executor"
+    ] = executor_helper_module
+
     model_module = types.ModuleType(
         "novavision.package.models.PackageModel"
     )
@@ -79,10 +105,14 @@ def _prepare_imports() -> None:
         "novavision.package.utils.response"
     )
 
-    def fake_build_response(context):
+    def fake_build_response_str(context):
         return {"message": context.message}
 
-    response_module.build_response = fake_build_response
+    def fake_build_response_list(context):
+        return {"message": context.message}
+
+    response_module.build_response_str = fake_build_response_str
+    response_module.build_response_list = fake_build_response_list
     sys.modules[
         "novavision.package.utils.response"
     ] = response_module
@@ -93,10 +123,10 @@ _prepare_imports()
 environment_utils = importlib.import_module(
     "novavision.package.utils.environment"
 )
-executor_module = importlib.import_module(
-    "novavision.package.executors.SecretOutputViewer"
+str_executor_module = importlib.import_module(
+    "novavision.package.executors.Str"
 )
-SecretOutputViewer = executor_module.SecretOutputViewer
+Str = str_executor_module.Str
 
 
 class FakeRequest:
@@ -129,12 +159,13 @@ def test_missing_reference_fails(monkeypatch):
         )
 
 
-def test_executor_returns_only_message(monkeypatch):
+def test_str_executor_returns_only_safe_message(monkeypatch):
     monkeypatch.setenv("ACCESS_TOKEN", "do-not-expose-me")
-    executor = SecretOutputViewer(
+    executor = Str(
         request=FakeRequest('["ACCESS_TOKEN"]'),
         bootstrap={},
     )
+
     response = executor.run()
 
     assert executor.resolved_values == {
@@ -142,8 +173,8 @@ def test_executor_returns_only_message(monkeypatch):
     }
     assert response == {
         "message": (
-            "1 secret value(s) were resolved and consumed "
-            "successfully."
+            "1 secret reference(s) were resolved and consumed "
+            "successfully. Secret values are masked."
         )
     }
     assert "do-not-expose-me" not in str(response)

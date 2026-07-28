@@ -6,9 +6,13 @@ Select **Str** and connect:
 to
 `Secret Output Viewer.secretReferences`
 
-The incoming value contains only environment-variable names, such as:
+The Viewer receives only names such as:
 
-`["DOCKER_NETWORK"]`
+```json
+["DOCKER_NETWORK"]
+```
 
-The viewer resolves the real values through NovaVision's runtime
-`Environment` SDK, keeps them only in memory, and outputs a safe message.
+It resolves the actual values again from the same NovaVision runtime
+through the `Environment` SDK, retains them only in memory, and outputs
+a safe success message. Secret values are never returned in the Viewer
+output.
