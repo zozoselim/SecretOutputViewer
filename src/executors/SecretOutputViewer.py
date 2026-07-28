@@ -62,20 +62,20 @@ class SecretOutputViewer(Component):
         return {}
 
     def run(self):
+        if not isinstance(
+            self.secret_context,
+            dict,
+        ):
+            raise RuntimeError(
+                "secretContext connection was not resolved "
+                "to an object."
+            )
+
         self.resolved_values = (
             resolve_secret_references(
                 self.secret_context
             )
         )
-
-        # Gerçek downstream işlemi burada yapılır.
-        #
-        # Örnek:
-        # docker_network = self.resolved_values[
-        #     "DOCKER_NETWORK"
-        # ]
-        #
-        # Değeri print veya output yapma.
 
         resolved_count = len(
             self.resolved_values
@@ -89,7 +89,6 @@ class SecretOutputViewer(Component):
         return build_response(
             context=self
         )
-
 
 if __name__ == "__main__":
     from sdks.novavision.src.helper.executor import (

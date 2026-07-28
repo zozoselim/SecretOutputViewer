@@ -24,12 +24,22 @@ class SecretContextInput(Input):
         "secretContext"
     ] = "secretContext"
 
-    value: Dict[
+    # NovaVision bağlantı kurulmadan önce object input'u
+    # boş string olarak oluşturabiliyor.
+    value: Union[
         str,
-        Union[str, List[str]],
-    ]
+        Dict[
+            str,
+            Union[
+                str,
+                List[str],
+            ],
+        ],
+    ] = ""
 
-    type: Literal["object"] = "object"
+    type: Literal[
+        "object"
+    ] = "object"
 
     class Config:
         title = "Secret Context"
