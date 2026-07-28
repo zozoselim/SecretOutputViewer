@@ -1,4 +1,4 @@
-"""Resolve string-form secret references and return a safe message."""
+"""Resolve list-form secret references and return a safe message."""
 
 import os
 import sys
@@ -12,7 +12,7 @@ from sdks.novavision.src.helper.executor import Executor
 if __package__:
     from ..models.PackageModel import PackageModel
     from ..utils.environment import resolve_secret_references
-    from ..utils.response import build_response_str
+    from ..utils.response import build_response_list
 else:
     from components.SecretOutputViewer.src.models.PackageModel import (
         PackageModel,
@@ -21,18 +21,18 @@ else:
         resolve_secret_references,
     )
     from components.SecretOutputViewer.src.utils.response import (
-        build_response_str,
+        build_response_list,
     )
 
 
-class Str(Component):
-    """Receive references, resolve values in runtime, and keep them masked."""
+class List(Component):
+    """Compatibility option required by the executor dropdown."""
 
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
         self.request.model = PackageModel(**self.request.data)
         self.secret_references = self.request.get_param(
-            "secretReferences"
+            "secretReferenceList"
         )
         self.resolved_values: Dict[str, str] = {}
         self.message = ""
@@ -58,7 +58,7 @@ class Str(Component):
                 f"failed: {error}"
             )
 
-        return build_response_str(context=self)
+        return build_response_list(context=self)
 
 
 if __name__ == "__main__":

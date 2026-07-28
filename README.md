@@ -1,17 +1,14 @@
-# Secret Output Viewer v0.4.1
+# Secret Output Viewer v0.4.2
 
-Compatibility-oriented viewer for the `secretReferences` string emitted by
-Environment Secrets Store.
+Select **Str** and connect:
 
-The package keeps the older working `Str` executor structure, parses the JSON
-reference list, resolves values through NovaVision's `Environment` SDK, stores
-values only in memory, and returns only a safe status message.
+`Environment Secrets Store.secretReferences`
+to
+`Secret Output Viewer.secretReferences`
 
-Connection:
+The incoming value contains only environment-variable names, such as:
 
-```text
-Environment Secrets Store.secretReferences
-    -> Secret Output Viewer.secretReferences
-```
+`["DOCKER_NETWORK"]`
 
-No `cryptography` package or transport key is required.
+The viewer resolves the real values through NovaVision's runtime
+`Environment` SDK, keeps them only in memory, and outputs a safe message.
