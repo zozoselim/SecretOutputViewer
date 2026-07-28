@@ -1,18 +1,35 @@
-# Secret Output Viewer v0.4.2
+# Secret Output Viewer
 
-Select **Str** and connect:
+Secret Output Viewer, Environment Secrets Store tarafından gönderilen environment variable referanslarını alır ve aynı NovaVision runtime ortamında bu değişkenlerin gerçek değerlerini çözer.
 
-`Environment Secrets Store.secretReferences`
-to
-`Secret Output Viewer.secretReferences`
+Gerçek secret değerleri yalnızca component belleğinde tutulur. Output olarak yalnızca güvenli bir başarı mesajı döndürülür.
 
-The Viewer receives only names such as:
+## Kullanım
+
+Bağlantı:
+
+```text
+Environment Secrets Store.secretReferences
+    → Secret Output Viewer.secretReferences
+```
+
+Örnek giriş:
 
 ```json
 ["DOCKER_NETWORK"]
 ```
 
-It resolves the actual values again from the same NovaVision runtime
-through the `Environment` SDK, retains them only in memory, and outputs
-a safe success message. Secret values are never returned in the Viewer
-output.
+Başarılı çıktı:
+
+```text
+1 secret reference(s) were resolved and consumed successfully.
+Secret values are masked.
+```
+
+## Geliştirme
+
+```bash
+python -m pytest -q
+```
+
+Bu paket test amaçlı bir downstream consumer olarak geliştirilmiştir ve secret değerlerini ekrana veya workflow outputuna yazmaz.
