@@ -3,6 +3,7 @@
 import os
 import sys
 from typing import Dict
+from collections.abc import Mapping
 
 
 sys.path.append(
@@ -62,18 +63,31 @@ class SecretOutputViewer(Component):
         return {}
 
     def run(self):
-        if not isinstance(
-            self.secret_context,
-            dict,
+        secret_context = self.secret_context
+
+        if hasattr(
+            secret_context,
+            "model_dump",
+        ):
+            secret_context = (
+                secret_context.model_dump()
+            )
+
+        if (
+            not isinstance(
+                secret_context,
+                Mapping,
+            )
+            or not secret_context
         ):
             raise RuntimeError(
                 "secretContext connection was not resolved "
-                "to an object."
+                "to a non-empty object."
             )
 
         self.resolved_values = (
             resolve_secret_references(
-                self.secret_context
+                secret_context
             )
         )
 

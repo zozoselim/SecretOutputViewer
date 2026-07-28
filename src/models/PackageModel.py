@@ -1,8 +1,8 @@
 """NovaVision package model for Secret Output Viewer."""
 
-from typing import Dict, List, Literal, Union
+from typing import Any, Dict, Literal, Union
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from sdks.novavision.src.base.model import (
     Config,
@@ -18,28 +18,39 @@ from sdks.novavision.src.base.model import (
 
 
 class SecretContextInput(Input):
-    """Safe environment-variable references from Environment Secrets Store."""
+    """Safe references received from Environment Secrets Store."""
 
     name: Literal[
         "secretContext"
     ] = "secretContext"
 
-    # NovaVision bağlantı kurulmadan önce object input'u
-    # boş string olarak oluşturabiliyor.
-    value: Union[
-        str,
-        Dict[
-            str,
-            Union[
-                str,
-                List[str],
-            ],
-        ],
-    ] = ""
+    value: Dict[str, Any] = Field(
+        default_factory=dict
+    )
 
     type: Literal[
         "object"
     ] = "object"
+
+    @field_validator(
+        "value",
+        mode="before",
+    )
+    @classmethod
+    def normalize_empty_placeholder(
+        cls,
+        value,
+    ):
+        """
+        NovaVision initially represents an unresolved object input
+        as an empty string. Convert only that placeholder to an
+        empty object while keeping the field's schema as object.
+        """
+
+        if value is None or value == "":
+            return {}
+
+        return value
 
     class Config:
         title = "Secret Context"
