@@ -1,10 +1,11 @@
-Copy these files into the SecretOutputViewer package.
+Copy these files into the SecretOutputViewer repository.
 
-Environment Secrets Store now outputs secretReferences as List[str].
-In SecretOutputViewer select the List executor and connect:
+Connect:
 
 EnvironmentSecretsStore.secretReferences
     -> SecretOutputViewer.secretList
 
-The viewer resolves each reference through NovaVision Environment SDK.
-It never returns, prints, or logs the secret values.
+Select List mode in SecretOutputViewer.
+
+The viewer resolves the real values through NovaVision Environment SDK,
+uses them only inside the executor, and returns only a success message.

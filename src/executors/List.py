@@ -32,7 +32,7 @@ else:
 
 
 class List(Component):
-    """Consume references and resolve all secrets internally."""
+    """Resolve received references and use secrets internally."""
 
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
@@ -46,8 +46,8 @@ class List(Component):
         )
 
         self.message = (
-            "Secret references were resolved successfully. "
-            "Secret values were not returned."
+            "Secret values were accessed successfully. "
+            "No secret value was returned."
         )
 
     @staticmethod
@@ -59,11 +59,9 @@ class List(Component):
             self.secret_references
         )
 
-        # A trusted package can use secret_values here.
-        # Never print, log, or return this dictionary.
-        _resolved_secret_count = len(
-            secret_values
-        )
+        # Trusted business logic uses secret_values here.
+        # Never print, log, or include it in the response.
+        _resolved_secret_count = len(secret_values)
 
         return build_response_list(
             context=self
