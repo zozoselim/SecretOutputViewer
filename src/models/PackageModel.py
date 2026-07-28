@@ -2,6 +2,8 @@
 
 from typing import Dict, List, Literal, Union
 
+from pydantic import Field
+
 from sdks.novavision.src.base.model import (
     Config,
     Configs,
@@ -16,36 +18,25 @@ from sdks.novavision.src.base.model import (
 
 
 class SecretContextInput(Input):
-    """Safe references received from Environment Secrets Store."""
+    """Safe environment-variable references from Environment Secrets Store."""
 
-    name: Literal["secretContext"] = "secretContext"
-    value: Dict[str, Union[str, List[str]]]
+    name: Literal[
+        "secretContext"
+    ] = "secretContext"
+
+    value: Dict[
+        str,
+        Union[str, List[str]],
+    ]
+
     type: Literal["object"] = "object"
 
     class Config:
         title = "Secret Context"
 
 
-class ConsumerInputs(Inputs):
-    secretContext: SecretContextInput
-
-
-class EmptyConfigs(Configs):
-    pass
-
-
-class ConsumerRequest(Request):
-    inputs: ConsumerInputs
-    configs: EmptyConfigs = EmptyConfigs()
-
-    class Config:
-        json_schema_extra = {
-            "target": "inputs",
-        }
-
-
 class MessageOutput(Output):
-    """Non-secret consumer status."""
+    """Non-secret execution status."""
 
     name: Literal["message"] = "message"
     value: str
@@ -55,29 +46,50 @@ class MessageOutput(Output):
         title = "Message"
 
 
-class ConsumerOutputs(Outputs):
+class ViewerInputs(Inputs):
+    secretContext: SecretContextInput
+
+
+class EmptyConfigs(Configs):
+    pass
+
+
+class ViewerRequest(Request):
+    inputs: ViewerInputs
+
+    configs: EmptyConfigs = Field(
+        default_factory=EmptyConfigs
+    )
+
+    class Config:
+        json_schema_extra = {
+            "target": "inputs",
+        }
+
+
+class ViewerOutputs(Outputs):
     message: MessageOutput
 
 
-class ConsumerResponse(Response):
-    outputs: ConsumerOutputs
+class ViewerResponse(Response):
+    outputs: ViewerOutputs
 
 
-class SecretReferenceConsumerExecutor(Config):
+class SecretOutputViewerExecutor(Config):
     name: Literal[
-        "SecretReferenceConsumer"
-    ] = "SecretReferenceConsumer"
+        "SecretOutputViewer"
+    ] = "SecretOutputViewer"
 
     value: Union[
-        ConsumerRequest,
-        ConsumerResponse,
+        ViewerRequest,
+        ViewerResponse,
     ]
 
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Secret Reference Consumer"
+        title = "Secret Output Viewer"
         json_schema_extra = {
             "target": {
                 "value": 0,
@@ -89,11 +101,16 @@ class ConfigExecutor(Config):
     name: Literal[
         "ConfigExecutor"
     ] = "ConfigExecutor"
-    value: SecretReferenceConsumerExecutor
+
+    value: SecretOutputViewerExecutor
+
     type: Literal["executor"] = "executor"
+
     field: Literal[
         "dependentDropdownlist"
     ] = "dependentDropdownlist"
+
+    restart: Literal[True] = True
 
     class Config:
         title = "Task"
@@ -109,6 +126,7 @@ class PackageConfigs(Configs):
 class PackageModel(Package):
     configs: PackageConfigs
     type: Literal["component"] = "component"
+
     name: Literal[
         "SecretOutputViewer"
     ] = "SecretOutputViewer"

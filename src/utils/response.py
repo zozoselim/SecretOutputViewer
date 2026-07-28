@@ -1,44 +1,49 @@
 """Response builder for Secret Output Viewer."""
 
-from sdks.novavision.src.helper.package import PackageHelper
+from sdks.novavision.src.helper.package import (
+    PackageHelper,
+)
+
 
 if __package__:
     from ..models.PackageModel import (
         ConfigExecutor,
-        ConsumerOutputs,
-        ConsumerResponse,
         MessageOutput,
         PackageConfigs,
         PackageModel,
-        SecretReferenceConsumerExecutor,
+        SecretOutputViewerExecutor,
+        ViewerOutputs,
+        ViewerResponse,
     )
 else:
     from components.SecretOutputViewer.src.models.PackageModel import (
         ConfigExecutor,
-        ConsumerOutputs,
-        ConsumerResponse,
         MessageOutput,
         PackageConfigs,
         PackageModel,
-        SecretReferenceConsumerExecutor,
+        SecretOutputViewerExecutor,
+        ViewerOutputs,
+        ViewerResponse,
     )
 
 
 def build_response(context):
-    """Return a safe downstream success message."""
+    """Return only a safe execution message."""
 
-    outputs = ConsumerOutputs(
+    outputs = ViewerOutputs(
         message=MessageOutput(
-            value=context.message,
+            value=context.message
         )
     )
 
-    response = ConsumerResponse(
-        outputs=outputs,
+    response = ViewerResponse(
+        outputs=outputs
     )
 
-    selected_executor = SecretReferenceConsumerExecutor(
-        value=response,
+    selected_executor = (
+        SecretOutputViewerExecutor(
+            value=response
+        )
     )
 
     package_configs = PackageConfigs(
@@ -52,4 +57,6 @@ def build_response(context):
         packageConfigs=package_configs,
     )
 
-    return helper.build_model(context)
+    return helper.build_model(
+        context
+    )

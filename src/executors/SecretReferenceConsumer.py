@@ -1,4 +1,4 @@
-"""Resolve secret references and use values without exposing them."""
+"""Consume secret references without exposing their values."""
 
 import os
 import sys
@@ -13,13 +13,15 @@ sys.path.append(
 )
 
 
-from sdks.novavision.src.base.component import Component
+from sdks.novavision.src.base.component import (
+    Component,
+)
 
 
 if __package__:
     from ..models.PackageModel import PackageModel
     from ..utils.environment import (
-        resolve_secret_context,
+        resolve_secret_references,
     )
     from ..utils.response import build_response
 else:
@@ -27,15 +29,15 @@ else:
         PackageModel,
     )
     from components.SecretOutputViewer.src.utils.environment import (
-        resolve_secret_context,
+        resolve_secret_references,
     )
     from components.SecretOutputViewer.src.utils.response import (
         build_response,
     )
 
 
-class SecretReferenceConsumer(Component):
-    """Use resolved secret values only inside trusted logic."""
+class SecretOutputViewer(Component):
+    """Resolve and consume trusted secret references."""
 
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
@@ -48,6 +50,11 @@ class SecretReferenceConsumer(Component):
             "secretContext"
         )
 
+        self.resolved_values: Dict[
+            str,
+            str,
+        ] = {}
+
         self.message = ""
 
     @staticmethod
@@ -55,19 +62,28 @@ class SecretReferenceConsumer(Component):
         return {}
 
     def run(self):
-        secret_values: Dict[str, str] = (
-            resolve_secret_context(
+        self.resolved_values = (
+            resolve_secret_references(
                 self.secret_context
             )
         )
 
-        # Real integration code uses secret_values here.
-        # Never print, log, or return the dictionary.
-        _resolved_secret_count = len(secret_values)
+        # Gerçek downstream işlemi burada yapılır.
+        #
+        # Örnek:
+        # docker_network = self.resolved_values[
+        #     "DOCKER_NETWORK"
+        # ]
+        #
+        # Değeri print veya output yapma.
+
+        resolved_count = len(
+            self.resolved_values
+        )
 
         self.message = (
-            "Secret values were resolved and are ready "
-            "for trusted internal use."
+            f"{resolved_count} secret value was resolved "
+            "and consumed successfully."
         )
 
         return build_response(
@@ -76,6 +92,8 @@ class SecretReferenceConsumer(Component):
 
 
 if __name__ == "__main__":
-    from sdks.novavision.src.helper.executor import Executor
+    from sdks.novavision.src.helper.executor import (
+        Executor,
+    )
 
     Executor(sys.argv[1]).run()

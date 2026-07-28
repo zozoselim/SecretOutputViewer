@@ -1,75 +1,113 @@
-"""Resolve secret contexts through NovaVision's Environment SDK."""
+"""Secret-reference helpers for Secret Output Viewer."""
 
-import re
-from typing import Dict, List, Mapping
+from typing import Any, Dict, List, Mapping
 
-from sdks.novavision.src.base.environment import Environment
-
-
-_ENV_NAME_PATTERN = re.compile(
-    r"[A-Za-z_][A-Za-z0-9_]*"
+from sdks.novavision.src.base.environment import (
+    Environment,
 )
 
 
-def resolve_secret_context(
-    secret_context: Mapping,
-) -> Dict[str, str]:
-    """Resolve references for trusted internal use only."""
+def parse_secret_references(
+    secret_context: Mapping[str, Any],
+) -> List[str]:
+    """Read and validate secret references from safe context."""
 
     if not isinstance(secret_context, Mapping):
-        raise TypeError(
+        raise ValueError(
             "secretContext must be an object."
         )
 
-    references = secret_context.get("references")
+    references = secret_context.get(
+        "references"
+    )
 
-    if (
-        not isinstance(references, list)
-        or not references
-    ):
+    if not isinstance(references, list):
         raise ValueError(
-            "secretContext.references must be "
-            "a non-empty list."
+            "secretContext.references must be a list."
         )
 
-    environment = Environment()
-    resolved: Dict[str, str] = {}
-    missing_references: List[str] = []
+    if not references:
+        raise ValueError(
+            "secretContext contains no secret references."
+        )
+
+    cleaned_references: List[str] = []
+    seen_references = set()
 
     for reference in references:
-        if (
-            not isinstance(reference, str)
-            or not _ENV_NAME_PATTERN.fullmatch(
-                reference.strip()
-            )
-        ):
+        if not isinstance(reference, str):
             raise ValueError(
-                "Secret references must be valid "
-                "environment variable names."
+                "Secret references must be strings."
             )
 
         cleaned_reference = reference.strip()
-        secret_value = (
-            environment.get_environment_variable(
-                cleaned_reference
+
+        if not cleaned_reference:
+            raise ValueError(
+                "Secret references cannot be empty."
             )
+
+        if cleaned_reference in seen_references:
+            raise ValueError(
+                "Secret references must be unique."
+            )
+
+        seen_references.add(
+            cleaned_reference
         )
 
-        if (
-            secret_value is None
-            or not str(secret_value).strip()
-        ):
+        cleaned_references.append(
+            cleaned_reference
+        )
+
+    return cleaned_references
+
+
+def resolve_secret_references(
+    secret_context: Mapping[str, Any],
+) -> Dict[str, str]:
+    """
+    Resolve referenced secrets through NovaVision's Environment SDK.
+
+    Secret values remain in memory and are never printed or returned.
+    """
+
+    references = parse_secret_references(
+        secret_context
+    )
+
+    environment = Environment()
+
+    resolved_values: Dict[str, str] = {}
+    missing_references: List[str] = []
+
+    for reference in references:
+        value = environment.get_environment_variable(
+            reference
+        )
+
+        if value is None or not str(value).strip():
             missing_references.append(
-                cleaned_reference
+                reference
             )
             continue
 
-        resolved[cleaned_reference] = secret_value
+        resolved_values[reference] = value
 
     if missing_references:
         raise RuntimeError(
-            "Secret references could not be resolved: "
+            "Required secret references were not found: "
             + ", ".join(missing_references)
         )
 
-    return resolved
+    return resolved_values
+
+
+def resolve_secret_context(
+    secret_context: Mapping[str, Any],
+) -> Dict[str, str]:
+    """Compatibility wrapper for existing tests and consumers."""
+
+    return resolve_secret_references(
+        secret_context
+    )
