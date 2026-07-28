@@ -124,10 +124,11 @@ class ConfigExecutor(Config):
     class Config:
         title = "Input Type"
         json_schema_extra = {
+            "target": "value",
             "shortDescription": (
-                "Choose Str for the string output or List for the list output "
-                "of Environment Secrets Store."
-            )
+                "Choose List for Environment Secrets Store "
+                "secretReferences output."
+            ),
         }
 
 
