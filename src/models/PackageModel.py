@@ -1,8 +1,6 @@
-"""NovaVision package model for Secret Output Viewer."""
+"""NovaVision package model for the Secret Output Viewer component."""
 
-from typing import Any, Dict, Literal, Union
-
-from pydantic import Field, field_validator
+from typing import List, Literal, Union
 
 from sdks.novavision.src.base.model import (
     Config,
@@ -17,47 +15,30 @@ from sdks.novavision.src.base.model import (
 )
 
 
-class SecretContextInput(Input):
-    """Safe references received from Environment Secrets Store."""
+class SecretStringInput(Input):
+    """One secret value received from Environment Secrets Store Str mode."""
 
-    name: Literal[
-        "secretContext"
-    ] = "secretContext"
-
-    value: Dict[str, Any] = Field(
-        default_factory=dict
-    )
-
-    type: Literal[
-        "object"
-    ] = "object"
-
-    @field_validator(
-        "value",
-        mode="before",
-    )
-    @classmethod
-    def normalize_empty_placeholder(
-        cls,
-        value,
-    ):
-        """
-        NovaVision initially represents an unresolved object input
-        as an empty string. Convert only that placeholder to an
-        empty object while keeping the field's schema as object.
-        """
-
-        if value is None or value == "":
-            return {}
-
-        return value
+    name: Literal["secretText"] = "secretText"
+    value: str
+    type: Literal["string"] = "string"
 
     class Config:
-        title = "Secret Context"
+        title = "Secret Text"
+
+
+class SecretReferencesInput(Input):
+    """Safe environment-variable references from Environment Secrets Store."""
+
+    name: Literal["secretReferences"] = "secretReferences"
+    value: List[str]
+    type: Literal["object"] = "object"
+
+    class Config:
+        title = "Secret References"
 
 
 class MessageOutput(Output):
-    """Non-secret execution status."""
+    """Human-readable, non-secret status message."""
 
     name: Literal["message"] = "message"
     value: str
@@ -67,76 +48,86 @@ class MessageOutput(Output):
         title = "Message"
 
 
-class ViewerInputs(Inputs):
-    secretContext: SecretContextInput
+class StrInputs(Inputs):
+    secretText: SecretStringInput
+
+
+class ListInputs(Inputs):
+    secretReferences: SecretReferencesInput
 
 
 class EmptyConfigs(Configs):
+    """The viewer needs no additional runtime configuration."""
+
     pass
 
 
-class ViewerRequest(Request):
-    inputs: ViewerInputs
-
-    configs: EmptyConfigs = Field(
-        default_factory=EmptyConfigs
-    )
+class StrRequest(Request):
+    inputs: StrInputs
+    configs: EmptyConfigs = EmptyConfigs()
 
     class Config:
-        json_schema_extra = {
-            "target": "inputs",
-        }
+        json_schema_extra = {"target": "inputs"}
+
+
+class ListRequest(Request):
+    inputs: ListInputs
+    configs: EmptyConfigs = EmptyConfigs()
+
+    class Config:
+        json_schema_extra = {"target": "inputs"}
 
 
 class ViewerOutputs(Outputs):
     message: MessageOutput
 
 
-class ViewerResponse(Response):
+class StrResponse(Response):
     outputs: ViewerOutputs
 
 
-class SecretOutputViewerExecutor(Config):
-    name: Literal[
-        "SecretOutputViewer"
-    ] = "SecretOutputViewer"
+class ListResponse(Response):
+    outputs: ViewerOutputs
 
-    value: Union[
-        ViewerRequest,
-        ViewerResponse,
-    ]
 
+class StrExecutor(Config):
+    name: Literal["Str"] = "Str"
+    value: Union[StrRequest, StrResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Secret Output Viewer"
-        json_schema_extra = {
-            "target": {
-                "value": 0,
-            }
-        }
+        title = "Str"
+        json_schema_extra = {"target": {"value": 0}}
+
+
+class ListExecutor(Config):
+    name: Literal["List"] = "List"
+    value: Union[ListRequest, ListResponse]
+    type: Literal["object"] = "object"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "List"
+        json_schema_extra = {"target": {"value": 0}}
 
 
 class ConfigExecutor(Config):
-    name: Literal[
-        "ConfigExecutor"
-    ] = "ConfigExecutor"
+    """Choose the input type that matches Environment Secrets Store."""
 
-    value: SecretOutputViewerExecutor
-
+    name: Literal["ConfigExecutor"] = "ConfigExecutor"
+    value: Union[StrExecutor, ListExecutor]
     type: Literal["executor"] = "executor"
-
-    field: Literal[
-        "dependentDropdownlist"
-    ] = "dependentDropdownlist"
-
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
     restart: Literal[True] = True
 
     class Config:
-        title = "Task"
+        title = "Input Type"
         json_schema_extra = {
-            "target": "value",
+            "shortDescription": (
+                "Choose Str for the string output or List for the list output "
+                "of Environment Secrets Store."
+            )
         }
 
 
@@ -147,7 +138,4 @@ class PackageConfigs(Configs):
 class PackageModel(Package):
     configs: PackageConfigs
     type: Literal["component"] = "component"
-
-    name: Literal[
-        "SecretOutputViewer"
-    ] = "SecretOutputViewer"
+    name: Literal["SecretOutputViewer"] = "SecretOutputViewer"

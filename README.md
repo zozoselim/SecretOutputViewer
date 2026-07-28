@@ -1,21 +1,16 @@
 # Secret Output Viewer
 
-This demo consumer receives a safe `secretContext` object from
-Environment Secrets Store.
+Select **List** mode.
 
-Connect:
+Input:
 
-```text
-EnvironmentSecretsStore.secretContext
-    -> SecretOutputViewer.secretContext
+```json
+["DOCKER_NETWORK", "ACCESS_TOKEN"]
 ```
 
-The consumer resolves the referenced environment variables through
-NovaVision's `Environment` SDK. Real values are available only inside
-the executor and are never returned or logged.
+The list contains only environment-variable names. The executor resolves the
+actual values through NovaVision's `Environment` SDK, keeps them in memory, and
+returns only a safe success message.
 
-Successful output:
-
-```text
-Secret values were resolved and are ready for trusted internal use.
-```
+The actual values are available inside `self.resolved_values` for trusted
+downstream work and are never written to the output.
