@@ -1,34 +1,19 @@
 # Secret Output Viewer
 
-A small NovaVision demo component designed to be connected after Environment Secrets Store.
-It confirms whether the upstream output is `Str` or `List` without printing secret values.
-
-## Modes
-
-- **Str**: accepts the string output of Environment Secrets Store and emits a safe message.
-- **List**: accepts the list/object output of Environment Secrets Store and emits a safe message containing only the number of received secrets.
-
-## Application flow
+Use the `Str` executor and connect:
 
 ```text
-EnvironmentSecretsStore (Str)  -> SecretOutputViewer (Str)
-EnvironmentSecretsStore (List) -> SecretOutputViewer (List)
+EnvironmentSecretsStore.message
+    -> SecretOutputViewer.secretText
 ```
 
-Select the same mode in both components. The terminal application output will be the viewer's `message` output.
+Environment Secrets Store first verifies access to the configured
+environment values and returns a safe success message.
 
-## Example outputs
-
-Str:
+Secret Output Viewer receives that string and returns:
 
 ```text
-Str output received successfully. Secret value is masked.
+Environment Secrets Store was connected successfully.
 ```
 
-List:
-
-```text
-List output received successfully. 2 secret value(s) are masked.
-```
-
-Use the existing Open CV image for `Str`, `List`, and `SecretOutputViewer` when registering the package in NovaVision.
+No secret value is transferred or displayed.

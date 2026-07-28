@@ -16,14 +16,14 @@ from sdks.novavision.src.base.model import (
 
 
 class SecretStringInput(Input):
-    """One environment-variable reference."""
+    """Status message received from Environment Secrets Store."""
 
     name: Literal["secretText"] = "secretText"
     value: str
     type: Literal["string"] = "string"
 
     class Config:
-        title = "Secret Reference"
+        title = "Environment Store Status"
 
 
 class SecretListInput(Input):
@@ -123,8 +123,8 @@ class ConfigExecutor(Config):
         title = "Reference Input Type"
         json_schema_extra = {
             "shortDescription": (
-                "Choose Str for one environment reference "
-                "or List for reference lists."
+                "Choose Str to receive the Environment Secrets Store "
+                "status message."
             )
         }
 

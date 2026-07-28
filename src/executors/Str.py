@@ -1,4 +1,4 @@
-"""Resolve one secret reference without exposing its value."""
+"""Confirm receipt of the upstream status message."""
 
 import os
 import sys
@@ -15,16 +15,10 @@ from sdks.novavision.src.helper.executor import Executor
 
 if __package__:
     from ..models.PackageModel import PackageModel
-    from ..utils.environment import (
-        resolve_secret_references,
-    )
     from ..utils.response import build_response_str
 else:
     from components.SecretOutputViewer.src.models.PackageModel import (
         PackageModel,
-    )
-    from components.SecretOutputViewer.src.utils.environment import (
-        resolve_secret_references,
     )
     from components.SecretOutputViewer.src.utils.response import (
         build_response_str,
@@ -32,7 +26,7 @@ else:
 
 
 class Str(Component):
-    """Consume one reference and resolve its secret internally."""
+    """Confirm that the upstream package is connected."""
 
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
@@ -41,29 +35,26 @@ class Str(Component):
             **self.request.data
         )
 
-        self.secret_reference = self.request.get_param(
+        self.upstream_message = self.request.get_param(
             "secretText"
         )
 
-        self.message = (
-            "Secret reference was resolved successfully. "
-            "The secret value was not returned."
-        )
+        self.message = ""
 
     @staticmethod
     def bootstrap(config: dict = None) -> dict:
         return {}
 
     def run(self):
-        secret_values = resolve_secret_references(
-            [self.secret_reference]
-        )
+        if not self.upstream_message.strip():
+            raise RuntimeError(
+                "Environment Secrets Store message was empty."
+            )
 
-        # A trusted package can use the value here.
-        # Never print it, log it, or include it in the response.
-        _secret_value = secret_values[
-            self.secret_reference
-        ]
+        self.message = (
+            "Environment Secrets Store was connected "
+            "successfully."
+        )
 
         return build_response_str(
             context=self
