@@ -57,7 +57,7 @@ environment_utils = importlib.import_module(
 )
 
 
-def test_resolve_context_uses_environment(
+def test_resolve_references_uses_environment(
     monkeypatch,
 ):
     monkeypatch.setenv(
@@ -65,11 +65,10 @@ def test_resolve_context_uses_environment(
         "private-token",
     )
 
-    result = environment_utils.resolve_secret_context(
-        {
-            "message": "available",
-            "references": ["ACCESS_TOKEN"],
-        }
+    result = environment_utils.resolve_secret_references(
+        [
+            "ACCESS_TOKEN",
+        ]
     )
 
     assert result == {
@@ -84,8 +83,8 @@ def test_missing_reference_fails(monkeypatch):
     )
 
     with pytest.raises(RuntimeError):
-        environment_utils.resolve_secret_context(
-            {
-                "references": ["MISSING_TOKEN"],
-            }
+        environment_utils.resolve_secret_references(
+            [
+                "MISSING_TOKEN",
+            ]
         )
