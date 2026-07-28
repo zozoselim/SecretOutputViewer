@@ -16,26 +16,25 @@ from sdks.novavision.src.base.model import (
 
 
 class SecretStringInput(Input):
-    """One secret value received from Environment Secrets Store Str mode."""
+    """One environment-variable reference."""
 
     name: Literal["secretText"] = "secretText"
     value: str
     type: Literal["string"] = "string"
 
     class Config:
-        title = "Secret Text"
+        title = "Secret Reference"
 
 
 class SecretListInput(Input):
-    """Secret values received from Environment Secrets Store List mode."""
+    """Environment-variable references from the store."""
 
     name: Literal["secretList"] = "secretList"
     value: List[str]
-    # NovaVision represents list payloads as object ports in this package family.
     type: Literal["object"] = "object"
 
     class Config:
-        title = "Secret List"
+        title = "Secret References"
 
 
 class MessageOutput(Output):
@@ -58,8 +57,6 @@ class ListInputs(Inputs):
 
 
 class EmptyConfigs(Configs):
-    """The viewer needs no additional runtime configuration."""
-
     pass
 
 
@@ -114,20 +111,20 @@ class ListExecutor(Config):
 
 
 class ConfigExecutor(Config):
-    """Choose the input type that matches Environment Secrets Store."""
-
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
     value: Union[StrExecutor, ListExecutor]
     type: Literal["executor"] = "executor"
-    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+    field: Literal[
+        "dependentDropdownlist"
+    ] = "dependentDropdownlist"
     restart: Literal[True] = True
 
     class Config:
-        title = "Input Type"
+        title = "Reference Input Type"
         json_schema_extra = {
             "shortDescription": (
-                "Choose Str for the string output or List for the list output "
-                "of Environment Secrets Store."
+                "Choose Str for one environment reference "
+                "or List for reference lists."
             )
         }
 
@@ -139,4 +136,6 @@ class PackageConfigs(Configs):
 class PackageModel(Package):
     configs: PackageConfigs
     type: Literal["component"] = "component"
-    name: Literal["SecretOutputViewer"] = "SecretOutputViewer"
+    name: Literal[
+        "SecretOutputViewer"
+    ] = "SecretOutputViewer"
